@@ -15,26 +15,26 @@ func SetZapLogger(zapLogger *zap.Logger) {
 var ShouldLog = false
 var ShouldLogIncoming = false
 
-func LogIncoming[T any](incoming T) {
+func LogIncoming(incoming interface{}) {
 	if ShouldLogIncoming {
 		s := fmt.Sprintf("request value: %v", pretty.JSON(incoming))
 		Logger.Info(s)
 	}
 }
 
-func LogError[T any](s string) {
+func LogError(s string) {
 	if ShouldLog {
 		Logger.Error(s)
 	}
 }
 
-func LogInfo[T any](s string) {
+func LogInfo(s string) {
 	if ShouldLog {
 		Logger.Info(s)
 	}
 }
 
-func LogWarn[T any](s string) {
+func LogWarn(s string) {
 	if ShouldLog {
 		Logger.Warn(s)
 	}

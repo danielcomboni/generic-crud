@@ -161,7 +161,6 @@ func GetAll[T any](c *gin.Context, fnServiceGetAll func() ([]T, error)) {
 		c.JSON(InternalServerError, responses.SetResponse(InternalServerError, "error", err.Error()))
 		return
 	}
-
 	c.JSON(OK, responses.SetResponse(OK, "successful", rows))
 }
 
