@@ -3,6 +3,7 @@ package genericcontrollers_gorm_gin
 import (
 	"fmt"
 	genericcrud_repositories_gorm "github.com/danielcomboni/generic-crud/genericcrud_repositories"
+	"github.com/danielcomboni/generic-crud/logging"
 	"github.com/danielcomboni/generic-crud/models"
 	"github.com/danielcomboni/generic-crud/responses"
 	"github.com/danielcomboni/generic-crud/utils"
@@ -21,16 +22,18 @@ const UnAuthorized = http.StatusUnauthorized
 
 func Create[T any](model *T, c *gin.Context, fnServiceCreate func(t T) (T, responses.GenericResponse, error)) {
 
+	logging.LogIncoming(model)
+
 	//Validate the request body
 	if err := c.BindJSON(&model); err != nil {
-		log.Println(fmt.Sprintf("failed to bind incoming object: %v", err))
+		logging.LogError(fmt.Sprintf("failed to bind incoming object: %v", err))
 		c.JSON(BadRequest, responses.SetResponse(BadRequest, "error", err.Error()))
 		return
 	}
 
 	//use the validator library to Validate required fields
 	if validationErr := Validate.Struct(model); validationErr != nil {
-		log.Println(fmt.Sprintf("failed to Validate incoming object: %v", validationErr))
+		logging.LogError(fmt.Sprintf("failed to Validate incoming object: %v", validationErr))
 		c.JSON(BadRequest, responses.SetResponse(BadRequest, "error", validationErr.Error()))
 		return
 	}
@@ -38,13 +41,14 @@ func Create[T any](model *T, c *gin.Context, fnServiceCreate func(t T) (T, respo
 	// save (insert) to database
 	created, res, err := fnServiceCreate(*model)
 	if err != nil {
-		log.Println(fmt.Sprintf("failed to save record: %v", err))
+		logging.LogError(fmt.Sprintf("failed to save record: %v", err))
 		c.JSON(InternalServerError, responses.SetResponse(InternalServerError, "error", err.Error()))
 		return
 	}
 
 	if !utils.IsNullOrEmpty(res.Message) {
-		log.Println(fmt.Sprintf("%v", res.Message))
+		logging.LogInfo(fmt.Sprintf("%v", res.Message))
+		log.Println()
 		c.JSON(res.Status, res)
 		return
 	}
@@ -57,7 +61,7 @@ func CreateBatch[T any](model []T, c *gin.Context, fnServiceCreate func(t []T) (
 
 	//Validate the request body
 	if err := c.BindJSON(&model); err != nil {
-		log.Println(fmt.Sprintf("failed to bind incoming object: %v", err))
+		logging.LogError(fmt.Sprintf("failed to bind incoming object: %v", err))
 		c.JSON(BadRequest, responses.SetResponse(BadRequest, "error", err.Error()))
 		return
 	}
@@ -65,7 +69,7 @@ func CreateBatch[T any](model []T, c *gin.Context, fnServiceCreate func(t []T) (
 	for _, t := range model {
 		//use the validator library to Validate required fields
 		if validationErr := Validate.Struct(t); validationErr != nil {
-			log.Println(fmt.Sprintf("failed to Validate incoming object: %v", validationErr))
+			logging.LogError(fmt.Sprintf("failed to Validate incoming object: %v", validationErr))
 			c.JSON(BadRequest, responses.SetResponse(BadRequest, "error", validationErr.Error()))
 			return
 		}
@@ -74,13 +78,13 @@ func CreateBatch[T any](model []T, c *gin.Context, fnServiceCreate func(t []T) (
 	// save (insert) to database
 	created, res, err := fnServiceCreate(model)
 	if err != nil {
-		log.Println(fmt.Sprintf("failed to save record: %v", err))
+		logging.LogError(fmt.Sprintf("failed to save record: %v", err))
 		c.JSON(InternalServerError, responses.SetResponse(InternalServerError, "error", err.Error()))
 		return
 	}
 
 	if !utils.IsNullOrEmpty(res.Message) {
-		log.Println(fmt.Sprintf("%v", res.Message))
+		logging.LogIncoming(fmt.Sprintf("%v", res.Message))
 		c.JSON(res.Status, res)
 		return
 	}
@@ -93,12 +97,14 @@ func UpdateById[T any](model *T, c *gin.Context, fnServiceUpdate func(t T, id st
 	id := c.Param("id")
 	//Validate the request body
 	if err := c.BindJSON(&model); err != nil {
+		logging.LogError(fmt.Sprintf("failed to bind incoming object: %v", err))
 		c.JSON(BadRequest, responses.SetResponse(BadRequest, "error", err.Error()))
 		return
 	}
 
 	//use the validator library to Validate required fields
 	if validationErr := Validate.Struct(model); validationErr != nil {
+		logging.LogError(fmt.Sprintf("failed to Validate incoming object: %v", validationErr))
 		c.JSON(BadRequest, responses.SetResponse(BadRequest, "error", validationErr.Error()))
 		return
 	}
@@ -106,6 +112,7 @@ func UpdateById[T any](model *T, c *gin.Context, fnServiceUpdate func(t T, id st
 	// save (insert) to database
 	created, err := fnServiceUpdate(*model, id)
 	if err != nil {
+		logging.LogError(fmt.Sprintf("failed to update record: %v", err))
 		c.JSON(InternalServerError, responses.SetResponse(InternalServerError, "error", err.Error()))
 		return
 	}
@@ -117,12 +124,14 @@ func UpdateById[T any](model *T, c *gin.Context, fnServiceUpdate func(t T, id st
 func PatchById[T any](model *models.PatchByIdModel, c *gin.Context, fnServicePatch func(object models.PatchByIdModel) (T, error)) {
 	//Validate the request body
 	if err := c.BindJSON(&model); err != nil {
+		logging.LogError(fmt.Sprintf("failed to bind incoming object: %v", err))
 		c.JSON(BadRequest, responses.SetResponse(BadRequest, "error", err.Error()))
 		return
 	}
 
 	//use the validator library to Validate required fields
 	if validationErr := Validate.Struct(model); validationErr != nil {
+		logging.LogError(fmt.Sprintf("failed to Validate incoming object: %v", validationErr))
 		c.JSON(BadRequest, responses.SetResponse(BadRequest, "error", validationErr.Error()))
 		return
 	}
@@ -130,6 +139,7 @@ func PatchById[T any](model *models.PatchByIdModel, c *gin.Context, fnServicePat
 	// save (insert) to database
 	created, err := fnServicePatch(*model)
 	if err != nil {
+		logging.LogError(fmt.Sprintf("failed to patch record: %v", err))
 		c.JSON(InternalServerError, responses.SetResponse(InternalServerError, "error", err.Error()))
 		return
 	}
@@ -151,11 +161,7 @@ func GetAll[T any](c *gin.Context, fnServiceGetAll func() ([]T, error)) {
 		c.JSON(InternalServerError, responses.SetResponse(InternalServerError, "error", err.Error()))
 		return
 	}
-	//var t []T
-	//if rows == nil || len(rows) == 0 {
-	//	c.JSON(OK, responses.SetResponse(OK, "successful", t))
-	//	return
-	//}
+
 	c.JSON(OK, responses.SetResponse(OK, "successful", rows))
 }
 
